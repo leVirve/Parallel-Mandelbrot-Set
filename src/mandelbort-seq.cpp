@@ -5,18 +5,8 @@ using namespace std;
 int num_thread, width, height;
 double dx, dy, real_min, imag_min;
 
-int main(int argc, char** argv) {
-    // int width = 800, height = 800;
-    int x = 0, y = 0;
-
-    try {
-        initial_env(argc, argv);
-        create_display(x, y, height, width);
-    } catch (char const* err) {
-        cerr << err << endl;
-        return 0;
-    }
-
+void calc()
+{
     ComplexNum z, c;
     for (int i = 0; i < width; i++) {
         for (int j = 0; j < height; j++) {
@@ -37,5 +27,16 @@ int main(int argc, char** argv) {
     }
     flush();
     sleep(5);
+}
+
+int main(int argc, char** argv) {
+    int x = 0, y = 0;
+    try {
+        initial_env(argc, argv);
+        create_display(x, y, height, width);
+        calc();
+    } catch (char const* err) {
+        cerr << err << endl;
+    }
     return 0;
 }
