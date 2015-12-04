@@ -16,7 +16,7 @@ mp:
 mpi:
 	$(eval TARGET := ms_mpi)
 	mpic++ src/mandelbrot-mpi-static.cpp $(header) -o $(TARGET)-static -lX11 $(LOG) $(CFLAGS)
-	# mpic++ src/mandelbrot-mpi-dynamic.cpp $(header) -o $(TARGET)-dynamic -lX11 $(LOG) $(CFLAGS)
+	mpic++ src/mandelbrot-mpi-dynamic.cpp $(header) -o $(TARGET)-dynamic -lX11 $(LOG) $(CFLAGS)
 
 clean:
 	-@rm $(OUTPUT) 2>/dev/null || true
