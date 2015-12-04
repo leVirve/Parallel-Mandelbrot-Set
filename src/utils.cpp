@@ -12,3 +12,11 @@ void initial_env(int argc, char** argv) {
     dx = (real_max - real_min) / width;
     dy = (imag_max - imag_min) / height;
 }
+
+void Timer::start() {
+    s = high_resolution_clock::now();
+}
+
+unsigned int Timer::stop() {
+    return duration_cast<nanoseconds>(high_resolution_clock::now() - s).count();
+}
