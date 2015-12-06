@@ -1,7 +1,5 @@
 #include <omp.h>
-#include <iostream>
-#include "utils.h"
-#include "display.h"
+#include "mandelbrot_utils.h"
 using namespace std;
 
 int num_thread, width, height;
@@ -10,23 +8,14 @@ double dx, dy, real_min, imag_min;
 void calc()
 {
     Timer timer;
-    ComplexNum z, c;
+    ComplexNum c;
     timer.start();
-    #pragma omp parallel for schedule(dynamic, 10) private(z, c) collapse(2)
+    #pragma omp parallel for schedule(dynamic, 10) private(c) collapse(2)
     for (int i = 0; i < width; i++) {
         for (int j = 0; j < height; j++) {
-            int repeats = 0;
-            double lengthsq = 0.0;
-            z.real = 0.0, z.imag = 0.0;
             c.real = i * dx + real_min;
             c.imag = j * dy + imag_min;
-            while (repeats < 100000 && lengthsq < 4.0) {
-                double temp = z.real * z.real - z.imag * z.imag + c.real;
-                z.imag = 2 * z.real * z.imag + c.imag;
-                z.real = temp;
-                lengthsq = z.real * z.real + z.imag * z.imag;
-                repeats++;
-            }
+            int repeats = calc_pixel(c);
             #pragma omp critical
             if (gui) draw_point(i, j, repeats);
         }
