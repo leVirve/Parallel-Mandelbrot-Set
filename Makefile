@@ -1,4 +1,5 @@
 CFLAGS = -O3 -std=c++11
+MPI = -D_MPI_SUPPORT_
 EXE = ms_*
 OUTPUT = $(EXE)
 header = src/display.cpp src/utils.cpp src/mandelbrot_utils.cpp
@@ -14,12 +15,12 @@ mp:
 	g++ src/mandelbrot-openmp-dynamic.cpp $(header) -o $(TARGET)-dynamic -lX11 -fopenmp $(LOG) $(CFLAGS)
 mpi:
 	$(eval TARGET := ms_mpi)
-	mpic++ src/mandelbrot-mpi-static.cpp $(header) -o $(TARGET)-static -lX11 $(LOG) $(CFLAGS)
-	mpic++ src/mandelbrot-mpi-dynamic.cpp $(header) -o $(TARGET)-dynamic -lX11 $(LOG) $(CFLAGS)
+	mpic++ src/mandelbrot-mpi-static.cpp $(header) -o $(TARGET)-static -lX11 $(LOG) $(CFLAGS) $(MPI)
+	mpic++ src/mandelbrot-mpi-dynamic.cpp $(header) -o $(TARGET)-dynamic -lX11 $(LOG) $(CFLAGS) $(MPI)
 hybrid:
 	$(eval TARGET := ms_hybrid)
-	mpic++ src/mandelbrot-hybrid-static.cpp $(header) -o $(TARGET)-static -lX11 -fopenmp $(LOG) $(CFLAGS)
-	mpic++ src/mandelbrot-hybrid-dynamic.cpp $(header) -o $(TARGET)-dynamic -lX11 -fopenmp $(LOG) $(CFLAGS)
+	mpic++ src/mandelbrot-hybrid-static.cpp $(header) -o $(TARGET)-static -lX11 -fopenmp $(LOG) $(CFLAGS) $(MPI)
+	mpic++ src/mandelbrot-hybrid-dynamic.cpp $(header) -o $(TARGET)-dynamic -lX11 -fopenmp $(LOG) $(CFLAGS) $(MPI)
 
 clean:
 	-@rm $(OUTPUT) 2>/dev/null || true

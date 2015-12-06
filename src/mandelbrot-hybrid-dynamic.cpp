@@ -10,9 +10,27 @@ int world_size, job_width, data_size, rank_num, *result;
 
 void master()
 {
+    if (gui) create_display(0, 0, height, width);
+    if (world_size == 1) {
+        int *color = result + 1;
+        ComplexNum c;
+        Timer timer;
+        timer.start();
+        #pragma omp parallel for schedule(dynamic, 10) private(c) collapse(2)
+        for (int i = 0; i < job_width; ++i) {
+            for (int y = 0; y < height; y++) {
+                c.real = (i + MASTER) * dx + real_min;
+                c.imag = y * dy + imag_min;
+                color[y * job_width + i] = calc_pixel(c);
+            }
+        }
+        cout << "#" << rank_num << " runs in " << (double)(timer.stop()) / 1000 << " us" << endl;
+        if (gui) { gui_draw(result[0], color); flush(); sleep(3); }
+        return;
+    }
+
     MPI_Status stat;
     int actives = 1, jobs = 0;
-    if (gui) create_display(0, 0, height, width);
     for (; actives < world_size && jobs < width; actives++, jobs += job_width)
         MPI_Send(&jobs, 1, MPI_INT, actives, DATA, MPI_COMM_WORLD);
     do {
@@ -58,14 +76,13 @@ void initial_MPI_env(int argc, char** argv)
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank_num);
 
-    job_width = 10;
+    job_width = world_size == 1 ? width : 10;
     data_size = job_width * height + 1;
     result = new int[data_size];
 }
 
 void start()
 {
-    // TODO: size == 1
     rank_num == MASTER ? master() : slave();
     MPI_Finalize();
 }

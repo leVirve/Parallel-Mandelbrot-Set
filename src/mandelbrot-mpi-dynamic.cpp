@@ -9,9 +9,19 @@ int world_size, job_width, data_size, rank_num, *result;
 
 void master()
 {
+    if (gui) create_display(0, 0, height, width);
+    if (world_size == 1) {
+        int *color = result + 1;
+        Timer timer;
+        timer.start();
+        _worker(MASTER, result);
+        cout << "#" << rank_num << " runs in " << (double)(timer.stop()) / 1000 << " us" << endl;
+        if (gui) { gui_draw(result[0], color); flush(); sleep(3); }
+        return;
+    }
+
     MPI_Status stat;
     int actives = 1, jobs = 0;
-    if (gui) create_display(0, 0, height, width);
     for (; actives < world_size && jobs < width; actives++, jobs += job_width)
         MPI_Send(&jobs, 1, MPI_INT, actives, DATA, MPI_COMM_WORLD);
     do {
@@ -30,20 +40,12 @@ void master()
 void slave()
 {
     MPI_Status stat;
-    ComplexNum c;
-    int col, *color = result + 1;
+    int col;
     Timer timer;
     timer.start();
     MPI_Recv(&col, 1, MPI_INT, MASTER, MPI_ANY_TAG, MPI_COMM_WORLD, &stat);
     while (stat.MPI_TAG == DATA) {
-        for (int i = 0, x = col; i < job_width && x < width; ++i, ++x) {
-            c.real = x * dx + real_min;
-            for (int y = 0; y < height; y++) {
-                c.imag = y * dy + imag_min;
-                color[y * job_width + i] = calc_pixel(c);
-            }
-        }
-        result[0] = col;
+        _worker(col, result);
         MPI_Send(result, data_size, MPI_INT, MASTER, RESULT, MPI_COMM_WORLD);
         MPI_Recv(&col, 1, MPI_INT, MASTER, MPI_ANY_TAG, MPI_COMM_WORLD, &stat);
     }
@@ -56,7 +58,7 @@ void initial_MPI_env(int argc, char** argv)
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank_num);
 
-    job_width = 10;
+    job_width = world_size == 1 ? width : 10;
     data_size = job_width * height + 1;
     result = new int[data_size];
 }
