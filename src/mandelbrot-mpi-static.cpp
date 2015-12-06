@@ -1,40 +1,11 @@
 #include <mpi.h>
-#include "utils.h"
-#include "display.h"
+#include "mandelbrot_utils.h"
 using namespace std;
 
 int num_thread, width, height;
 double dx, dy, real_min, imag_min;
 
-int world_size, job_width, data_size, rank_num;
-int *result, *results;
-const int MASTER = 0;
-
-void gui_display()
-{
-    create_display(0, 0, height, width);
-    for (int r = 0; r < world_size; r++)
-        for (int i = 0, x = r * job_width; i < job_width; ++i, ++x)
-            for (int j = 0; j < height; ++j)
-                draw_point(x, j, results[r * data_size + j * job_width + i]);
-    flush();
-    sleep(2);
-}
-
-inline int calc_pixel(ComplexNum& c)
-{
-    int repeats = 0;
-    double lengthsq = 0.0;
-    ComplexNum z = {0.0, 0.0};
-    while (repeats < 100000 && lengthsq < 4.0) {
-        double temp = z.real * z.real - z.imag * z.imag + c.real;
-        z.imag = 2 * z.real * z.imag + c.imag;
-        z.real = temp;
-        lengthsq = z.real * z.real + z.imag * z.imag;
-        repeats++;
-    }
-    return repeats;
-}
+int world_size, job_width, data_size, rank_num, *result, *results;
 
 void start(int sz)
 {
@@ -76,7 +47,7 @@ int main(int argc, char** argv) {
         initial_MPI_env(argc, argv);
         start(job_width);
         collect_results();
-        if (rank_num == 0 && gui) gui_display();
+        if (rank_num == 0 && gui) gui_display(results);
     } catch (char const* err) {
         cerr << err << endl;
     }

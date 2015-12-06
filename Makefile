@@ -1,7 +1,7 @@
 CFLAGS = -O3 -std=c++11
 EXE = ms_*
 OUTPUT = $(EXE)
-header = src/display.cpp src/utils.cpp
+header = src/display.cpp src/utils.cpp src/mandelbrot_utils.cpp
 
 all: clean hybrid
 

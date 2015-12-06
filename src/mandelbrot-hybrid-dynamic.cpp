@@ -1,36 +1,12 @@
 #include <mpi.h>
-#include "utils.h"
-#include "display.h"
+#include <omp.h>
+#include "mandelbrot_utils.h"
 using namespace std;
 
 int num_thread, width, height;
 double dx, dy, real_min, imag_min;
 
 int world_size, job_width, data_size, rank_num, *result;
-const int MASTER = 0;
-enum tag {RESULT, DATA, TERMINATE};
-
-void gui_draw(int col, int* color)
-{
-    for (int i = 0, x = col; i < job_width; ++i, ++x)
-        for (int j = 0; j < height; ++j)
-            draw_point(x, j, color[j * job_width + i]);
-}
-
-inline int calc_pixel(ComplexNum& c)
-{
-    int repeats = 0;
-    double lengthsq = 0.0;
-    ComplexNum z = {0.0, 0.0};
-    while (repeats < 100000 && lengthsq < 4.0) {
-        double temp = z.real * z.real - z.imag * z.imag + c.real;
-        z.imag = 2 * z.real * z.imag + c.imag;
-        z.real = temp;
-        lengthsq = z.real * z.real + z.imag * z.imag;
-        repeats++;
-    }
-    return repeats;
-}
 
 void master()
 {
@@ -89,6 +65,7 @@ void initial_MPI_env(int argc, char** argv)
 
 void start()
 {
+    // TODO: size == 1
     rank_num == MASTER ? master() : slave();
     MPI_Finalize();
 }

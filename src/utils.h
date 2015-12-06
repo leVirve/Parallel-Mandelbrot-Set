@@ -1,3 +1,6 @@
+#ifndef __UTILS_H__
+#define __UTILS_H__
+
 #include <stdio.h>
 #include <unistd.h>
 #include <chrono>
@@ -33,3 +36,5 @@ public:
     void start();
     unsigned int stop();
 };
+
+#endif
