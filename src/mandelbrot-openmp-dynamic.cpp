@@ -32,7 +32,7 @@ void calc()
         }
     }
     cout << "Runs in " << (double)(timer.stop()) / 1000 << " us" << endl;
-    if (gui) { flush(); sleep(5); }
+    if (gui) flush();
 }
 
 int main(int argc, char** argv) {

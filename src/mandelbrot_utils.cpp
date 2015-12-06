@@ -10,7 +10,6 @@ void gui_display(int* results)
             for (int j = 0; j < height; ++j)
                 draw_point(x, j, results[r * data_size + j * job_width + i]);
     flush();
-    sleep(2);
 }
 
 void gui_draw(int col, int* color)

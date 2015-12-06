@@ -37,4 +37,5 @@ void draw_point(int x, int y, int color) {
 
 void flush() {
     XFlush(display);
+    sleep(2);
 }

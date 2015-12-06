@@ -25,7 +25,7 @@ void master()
             }
         }
         cout << "#" << rank_num << " runs in " << (double)(timer.stop()) / 1000 << " us" << endl;
-        if (gui) { gui_draw(result[0], color); flush(); sleep(3); }
+        if (gui) { gui_draw(result[0], color); flush(); }
         return;
     }
 
@@ -43,7 +43,7 @@ void master()
         } else MPI_Send(&jobs, 1, MPI_INT, slave, TERMINATE, MPI_COMM_WORLD);
         if (gui) gui_draw(col, color);
     } while (actives > 1);
-    if (gui) { flush(); sleep(3); }
+    if (gui) flush();
 }
 
 void slave()
