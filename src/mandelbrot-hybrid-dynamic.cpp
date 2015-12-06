@@ -5,27 +5,32 @@ using namespace std;
 
 int num_thread, width, height;
 double dx, dy, real_min, imag_min;
-
+Timer timer;
 int world_size, job_width, data_size, rank_num, *result;
+
+void _worker(int start, int* result)
+{
+    int *color = result + 1;
+    ComplexNum c;
+    #pragma omp parallel for schedule(dynamic, 10) private(c) collapse(2)
+    for (int i = 0; i < job_width; ++i) {
+        for (int y = 0; y < height; y++) {
+            c.real = (i + start) * dx + real_min;
+            c.imag = y * dy + imag_min;
+            color[y * job_width + i] = calc_pixel(c);
+        }
+    }
+    result[0] = start;
+}
 
 void master()
 {
     if (gui) create_display(0, 0, height, width);
     if (world_size == 1) {
-        int *color = result + 1;
-        ComplexNum c;
-        Timer timer;
         timer.start();
-        #pragma omp parallel for schedule(dynamic, 10) private(c) collapse(2)
-        for (int i = 0; i < job_width; ++i) {
-            for (int y = 0; y < height; y++) {
-                c.real = (i + MASTER) * dx + real_min;
-                c.imag = y * dy + imag_min;
-                color[y * job_width + i] = calc_pixel(c);
-            }
-        }
+        _worker(MASTER, result);
         cout << "#" << rank_num << " runs in " << (double)(timer.stop()) / 1000 << " us" << endl;
-        if (gui) { gui_draw(result[0], color); flush(); }
+        if (gui) { gui_draw(result[0], result + 1); flush(); }
         return;
     }
 
@@ -49,21 +54,11 @@ void master()
 void slave()
 {
     MPI_Status stat;
-    ComplexNum c;
-    int col, *color = result + 1;
-    Timer timer;
+    int col;
     timer.start();
     MPI_Recv(&col, 1, MPI_INT, MASTER, MPI_ANY_TAG, MPI_COMM_WORLD, &stat);
     while (stat.MPI_TAG == DATA) {
-        #pragma omp parallel for schedule(dynamic, 10) private(c) collapse(2)
-        for (int i = 0; i < job_width; ++i) {
-            for (int y = 0; y < height; y++) {
-                c.real = (i + col) * dx + real_min;
-                c.imag = y * dy + imag_min;
-                color[y * job_width + i] = calc_pixel(c);
-            }
-        }
-        result[0] = col;
+        _worker(col, result);
         MPI_Send(result, data_size, MPI_INT, MASTER, RESULT, MPI_COMM_WORLD);
         MPI_Recv(&col, 1, MPI_INT, MASTER, MPI_ANY_TAG, MPI_COMM_WORLD, &stat);
     }

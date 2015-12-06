@@ -6,7 +6,6 @@ const int MASTER = 0;
 enum tag {RESULT, DATA, TERMINATE};
 extern int world_size, job_width, data_size;
 
-void _worker(int start, int* result);
 void gui_display(int* results);
 void gui_draw(int col, int* color);
 #endif

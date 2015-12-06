@@ -4,19 +4,31 @@ using namespace std;
 
 int num_thread, width, height;
 double dx, dy, real_min, imag_min;
-
+Timer timer;
 int world_size, job_width, data_size, rank_num, *result;
+
+void _worker(int start, int* result)
+{
+    int *color = result + 1;
+    ComplexNum c;
+    for (int i = 0, x = start; i < job_width && x < width; ++i, ++x) {
+        c.real = x * dx + real_min;
+        for (int y = 0; y < height; y++) {
+            c.imag = y * dy + imag_min;
+            color[y * job_width + i] = calc_pixel(c);
+        }
+    }
+    result[0] = start;
+}
 
 void master()
 {
     if (gui) create_display(0, 0, height, width);
     if (world_size == 1) {
-        int *color = result + 1;
-        Timer timer;
         timer.start();
         _worker(MASTER, result);
         cout << "#" << rank_num << " runs in " << (double)(timer.stop()) / 1000 << " us" << endl;
-        if (gui) { gui_draw(result[0], color); flush(); }
+        if (gui) { gui_draw(result[0], result + 1); flush(); }
         return;
     }
 
@@ -41,7 +53,6 @@ void slave()
 {
     MPI_Status stat;
     int col;
-    Timer timer;
     timer.start();
     MPI_Recv(&col, 1, MPI_INT, MASTER, MPI_ANY_TAG, MPI_COMM_WORLD, &stat);
     while (stat.MPI_TAG == DATA) {
