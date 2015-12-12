@@ -5,9 +5,9 @@ using namespace std;
 int num_thread, width, height;
 double dx, dy, real_min, imag_min;
 Timer timer;
-int world_size, job_width, data_size, rank_num, *result;
+int world_size, job_width, data_size, rank_num, *result, ccc[12];
 
-void _worker(int start, int* result)
+void inline _worker(int start, int* result)
 {
     int *color = result + 1;
     ComplexNum c;
@@ -25,9 +25,7 @@ void master()
 {
     if (gui) create_display(0, 0, height, width);
     if (world_size == 1) {
-        timer.start();
         _worker(MASTER, result);
-        cout << "#" << rank_num << " runs in " << (double)(timer.stop()) / 1000 << " us" << endl;
         if (gui) { gui_draw(result[0], result + 1); flush(); }
         return;
     }
@@ -52,15 +50,14 @@ void master()
 void slave()
 {
     MPI_Status stat;
-    int col;
-    timer.start();
+    unsigned int col;
     MPI_Recv(&col, 1, MPI_INT, MASTER, MPI_ANY_TAG, MPI_COMM_WORLD, &stat);
     while (stat.MPI_TAG == DATA) {
         _worker(col, result);
+        ccc[rank_num] += job_width * height;
         MPI_Send(result, data_size, MPI_INT, MASTER, RESULT, MPI_COMM_WORLD);
         MPI_Recv(&col, 1, MPI_INT, MASTER, MPI_ANY_TAG, MPI_COMM_WORLD, &stat);
     }
-    cout << "#" << rank_num << " runs in " << (double)(timer.stop()) / 1000 << " us" << endl;
 }
 
 void initial_MPI_env(int argc, char** argv)
@@ -69,19 +66,23 @@ void initial_MPI_env(int argc, char** argv)
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank_num);
 
-    job_width = world_size == 1 ? width : 10;
+    job_width = world_size == 1 ? width : 20;
     data_size = job_width * height + 1;
     result = new int[data_size];
 }
 
 void start()
 {
+    double s = MPI_Wtime();
     rank_num == MASTER ? master() : slave();
+    cout << fixed << rank_num << ": " << MPI_Wtime() - s << endl;
+    cout << "#" << rank_num << ", load= " << ccc[rank_num] << endl;
     MPI_Finalize();
 }
 
 int main(int argc, char** argv) {
     try {
+        for (int i = 0; i < 12; ++i) ccc[i] = 0;
         initial_env(argc, argv);
         initial_MPI_env(argc, argv);
         start();

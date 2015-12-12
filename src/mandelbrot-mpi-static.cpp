@@ -3,15 +3,13 @@
 using namespace std;
 
 int num_thread, width, height;
-double dx, dy, real_min, imag_min;
+double dx, dy, real_min, imag_min, s;
 
 int world_size, job_width, data_size, rank_num, *result, *results;
 
 void start(int sz)
 {
     ComplexNum c;
-    Timer timer;
-    timer.start();
     for (int i = 0, x = rank_num * sz; i < sz && x < width; ++i, ++x) {
         c.real = x * dx + real_min;
         for (int j = 0; j < height; j++) {
@@ -19,7 +17,6 @@ void start(int sz)
             result[j * sz + i] = calc_pixel(c);
         }
     }
-    cout << "#" << rank_num << " runs in " << (double)(timer.stop()) / 1000 << " us" << endl;
 }
 
 void initial_MPI_env(int argc, char** argv)
@@ -38,6 +35,7 @@ void collect_results()
 {
     if (rank_num == 0) results = new int [world_size * data_size];
     MPI_Gather(result, data_size, MPI_INT, results, data_size, MPI_INT, MASTER, MPI_COMM_WORLD);
+    cout << fixed << rank_num << ": " << MPI_Wtime() - s << endl;
     MPI_Finalize();
 }
 
@@ -45,6 +43,7 @@ int main(int argc, char** argv) {
     try {
         initial_env(argc, argv);
         initial_MPI_env(argc, argv);
+        s = MPI_Wtime();
         start(job_width);
         collect_results();
         if (rank_num == 0 && gui) gui_display(results);

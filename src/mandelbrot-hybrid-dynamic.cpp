@@ -5,8 +5,11 @@ using namespace std;
 
 int num_thread, width, height;
 double dx, dy, real_min, imag_min;
-Timer timer;
 int world_size, job_width, data_size, rank_num, *result;
+
+#ifdef _LODE_BALANCE_ANALYSIS_
+    double timer[12][12];
+#endif
 
 void _worker(int start, int* result)
 {
@@ -15,9 +18,15 @@ void _worker(int start, int* result)
     #pragma omp parallel for schedule(dynamic, 10) private(c) collapse(2)
     for (int i = 0; i < job_width; ++i) {
         for (int y = 0; y < height; y++) {
+        #ifdef _LODE_BALANCE_ANALYSIS_
+            double s = omp_get_wtime();
+        #endif
             c.real = (i + start) * dx + real_min;
             c.imag = y * dy + imag_min;
             color[y * job_width + i] = calc_pixel(c);
+        #ifdef _LODE_BALANCE_ANALYSIS_
+            timer[rank_num][omp_get_thread_num()] += omp_get_wtime() - s;
+        #endif
         }
     }
     result[0] = start;
@@ -27,9 +36,7 @@ void master()
 {
     if (gui) create_display(0, 0, height, width);
     if (world_size == 1) {
-        timer.start();
         _worker(MASTER, result);
-        cout << "#" << rank_num << " runs in " << (double)(timer.stop()) / 1000 << " us" << endl;
         if (gui) { gui_draw(result[0], result + 1); flush(); }
         return;
     }
@@ -54,15 +61,13 @@ void master()
 void slave()
 {
     MPI_Status stat;
-    int col;
-    timer.start();
+    unsigned int col;
     MPI_Recv(&col, 1, MPI_INT, MASTER, MPI_ANY_TAG, MPI_COMM_WORLD, &stat);
     while (stat.MPI_TAG == DATA) {
         _worker(col, result);
         MPI_Send(result, data_size, MPI_INT, MASTER, RESULT, MPI_COMM_WORLD);
         MPI_Recv(&col, 1, MPI_INT, MASTER, MPI_ANY_TAG, MPI_COMM_WORLD, &stat);
     }
-    cout << "#" << rank_num << " runs in " << (double)(timer.stop()) / 1000 << " us" << endl;
 }
 
 void initial_MPI_env(int argc, char** argv)
@@ -79,7 +84,6 @@ void initial_MPI_env(int argc, char** argv)
 void start()
 {
     rank_num == MASTER ? master() : slave();
-    MPI_Finalize();
 }
 
 int main(int argc, char** argv) {
@@ -87,10 +91,18 @@ int main(int argc, char** argv) {
         initial_env(argc, argv);
         omp_set_num_threads(num_thread);
         initial_MPI_env(argc, argv);
+        double s = omp_get_wtime();
         start();
+    #ifdef _LODE_BALANCE_ANALYSIS_
+        for (int j = 0; j < num_thread; ++j)
+            cout << timer[rank_num][j] << endl;
+    #else
+        cout << fixed << rank_num << "\t" << omp_get_wtime() - s << endl;
+    #endif
     } catch (char const* err) {
         cerr << err << endl;
     }
+    MPI_Finalize();
     delete [] result;
     return 0;
 }

@@ -31,10 +31,11 @@ void initial_env(int argc, char** argv);
 
 class Timer {
 private:
-    high_resolution_clock::time_point s;
+	time_point<system_clock> s;
 public:
     void start();
     unsigned int stop();
+    void log();
 };
 
 #endif

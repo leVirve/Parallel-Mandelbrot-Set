@@ -14,9 +14,13 @@ void initial_env(int argc, char** argv) {
 }
 
 void Timer::start() {
-    s = high_resolution_clock::now();
+    s = system_clock::now();
 }
 
 unsigned int Timer::stop() {
-    return duration_cast<nanoseconds>(high_resolution_clock::now() - s).count();
+    return duration<double>(system_clock::now() - s).count();
+}
+
+void Timer::log() {
+    cout << fixed << "Runs in "<< (double)(stop()) / 1000 << " us" << endl;
 }
