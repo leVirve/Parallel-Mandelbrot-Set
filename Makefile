@@ -1,10 +1,10 @@
-CFLAGS = -O3 -std=c++11
+CFLAGS = -O3 -std=c++11 -D_LODE_BALANCE_ANALYSIS_0
 MPI = -D_MPI_SUPPORT_
 EXE = ms_*
-OUTPUT = $(EXE)
+OUTPUT = $(EXE) output/* errors/*
 header = src/display.cpp src/utils.cpp src/mandelbrot_utils.cpp
 
-all: clean hybrid
+all: clean mp mpi hybrid
 
 seq:
 	$(eval TARGET := ms_seq)
