@@ -76,7 +76,7 @@ void initial_MPI_env(int argc, char** argv)
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank_num);
 
-    job_width = world_size == 1 ? width : 10;
+    job_width = world_size == 1 ? width : 20;
     data_size = job_width * height + 1;
     result = new int[data_size];
 }
